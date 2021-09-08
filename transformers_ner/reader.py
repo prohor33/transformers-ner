@@ -1,8 +1,9 @@
+import glob
+
 class ConllReader:
     def read(self, file_path: str):
         tokens = []
         tags = []
-        
         with open(file_path) as file:
             lines = file.readlines()
             for line in lines:
