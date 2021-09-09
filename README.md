@@ -1,6 +1,6 @@
 # Yet another [BERT](https://arxiv.org/pdf/1810.04805.pdf) NER implementation with 🤗 [Transformers](https://github.com/huggingface/transformers)
 
-Results on Conll after 5 epochs on validation
+Results on [Conll2003](https://www.clips.uantwerpen.be/conll2003/ner/) after 5 epochs on validation
 
 entity | precision | recall | f1-score | support
 ------------ | ------------- | ------------- | ------------- | -------------
