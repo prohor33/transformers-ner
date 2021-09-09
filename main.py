@@ -1,3 +1,4 @@
+from transformers_ner.utils import bpe_to_tokens
 from transformers_ner.reader import ConllReader
 from transformers_ner.dataset import BERTDataset
 from transformers_ner.model import BertNERModel
@@ -10,6 +11,7 @@ import logging
 import os
 from omegaconf import OmegaConf
 from tqdm import tqdm
+from sklearn.metrics import classification_report
 
 
 @hydra.main(config_path="conf", config_name="config")
@@ -20,8 +22,17 @@ def main(cfg):
     logger.info(f"Config: {OmegaConf.to_yaml(cfg)}")
 
     reader = ConllReader()
-    train_dataset = BERTDataset(cfg.model_name, reader.read(to_absolute_path(cfg.train_path)))
-    valid_dataset = BERTDataset(cfg.model_name, reader.read(to_absolute_path(cfg.valid_path)))
+    train_dataset = BERTDataset(
+        cfg.model_name,
+        reader.read(to_absolute_path(cfg.train_path),
+        samples_number=None)
+    )
+    valid_dataset = BERTDataset(
+        cfg.model_name,
+        reader.read(to_absolute_path(cfg.valid_path),
+        samples_number=None),
+        label_to_index=train_dataset.label_to_index
+    )
 
     data_collator = DataCollatorForTokenClassification(train_dataset.tokenizer, pad_to_multiple_of=None)
 
@@ -64,7 +75,7 @@ def main(cfg):
         with tqdm(total=len(train_dataloader)) as t:
             for step, batch in enumerate(train_dataloader):
                 batch = {k: v.to(cfg.device) for k, v in batch.items()}
-                outputs = model(batch)
+                outputs, _ = model(batch)
                 loss = outputs.loss
                 t.set_description("{:10.6f}".format(loss.item()))
                 loss.backward()
@@ -74,11 +85,22 @@ def main(cfg):
                 t.update()
 
         model.eval()
-        for step, batch in enumerate(eval_dataloader):
-            with torch.no_grad():
-                outputs = model(**batch)
-            predictions = outputs.logits.argmax(dim=-1)
+        labels_pred = []
+        labels_gold = []
+        for step, batch in enumerate(valid_dataloader):
             labels = batch["labels"]
+            batch = {k: v.to(cfg.device) for k, v in batch.items()}
+            with torch.no_grad():
+                outputs, logits = model(batch)
+                predictions = logits.argmax(dim=1)
+            predictions = predictions.detach().cpu().numpy()
+            labels = labels.detach().cpu().numpy()
+            labels_pred_batch, labels_gold_batch = bpe_to_tokens(predictions, labels, train_dataset.idx_to_label())
+            labels_pred.extend(labels_pred_batch)
+            labels_gold.extend(labels_gold_batch)
+
+        report = classification_report(labels_gold, labels_pred)
+        print(report)
 
 
 if __name__ == "__main__":

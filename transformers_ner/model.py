@@ -24,8 +24,8 @@ class BertNERModel(nn.Module):
             x.pop("labels")
         output = self.bert(**x)
         x = output[0]
-        x = self.head(x)
+        logits = self.head(x)
         if labels is not None:
-            x = x.transpose(1, 2)
-            output["loss"] = self.loss_fn(x, labels)
-        return output
+            logits = logits.transpose(1, 2)
+            output["loss"] = self.loss_fn(logits, labels)
+        return output, logits

@@ -4,8 +4,9 @@ from tqdm import tqdm
 model_name = "bert-base-cased"
 
 class BERTDataset():
-    def __init__(self, model_name, sequences):
-        self.label_to_index = {}
+    def __init__(self, model_name, sequences, label_to_index={}):
+        self.read_only_label_to_index = bool(label_to_index)
+        self.label_to_index = label_to_index
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         tokenized_sequences = []
         for seq in tqdm(sequences):
@@ -16,6 +17,8 @@ class BERTDataset():
         if label != "O":
             label = label.split('-')[1]
         if not label in self.label_to_index:
+            if self.read_only_label_to_index:
+                raise RuntimeError(f"No label \"{label}\" in supplyed label_to_index: {self.label_to_index}.")
             self.label_to_index[label] = len(self.label_to_index)
         return self.label_to_index[label]
         
@@ -49,3 +52,7 @@ class BERTDataset():
     
     def num_classes(self):
         return len(self.label_to_index)
+
+    def idx_to_label(self):
+        assert len(self.label_to_index.values()) == len(set(self.label_to_index.values()))
+        return {v: k for k, v in self.label_to_index.items()}
