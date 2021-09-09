@@ -1,4 +1,4 @@
-# Yet another BERT NER implementation with 🤗 [Transformers](https://github.com/huggingface/transformers)
+# Yet another [BERT](https://arxiv.org/pdf/1810.04805.pdf) NER implementation with 🤗 [Transformers](https://github.com/huggingface/transformers)
 
 Results on Conll after 5 epochs on validation
 
