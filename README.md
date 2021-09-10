@@ -14,7 +14,7 @@ macro avg   |      0.97   |   0.96   |   0.97   |  51362
 weighted avg  |     0.99    |  0.99  |    0.99    | 51362
 
 TODO:
-- [ ] Save best model
+- [x] Save best model
 - [ ] Add predict
 - [ ] Add logging to tensorboard
 - [ ] Try different datasets
