@@ -1,4 +1,6 @@
 model_name: "bert-base-cased"
+train_from_scratch: True
+from_scratch_bert_config: "data/config.json"
 train_path: "data/conll2003/train.txt"
 valid_path: "data/conll2003/dev.txt"
 num_classes: 5
@@ -8,4 +10,5 @@ weight_decay: 0.0
 num_epochs: 5
 num_warmup_steps: 0
 device: "cuda:2"
+save_model_path: "model.cpt"
 

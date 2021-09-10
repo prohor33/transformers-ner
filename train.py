@@ -1,3 +1,4 @@
+from transformers.models.bert.configuration_bert import BertConfig
 from transformers_ner.utils import bpe_to_tokens
 from transformers_ner.reader import ConllReader
 from transformers_ner.dataset import BERTDataset
@@ -12,6 +13,7 @@ import os
 from omegaconf import OmegaConf
 from tqdm import tqdm
 from sklearn.metrics import classification_report
+import json
 
 
 @hydra.main(config_path="conf", config_name="config")
@@ -43,7 +45,12 @@ def main(cfg):
         valid_dataset, shuffle=False, collate_fn=data_collator, batch_size=cfg.batch_size
     )
 
-    model = BertNERModel(num_classes=cfg.num_classes, pretrained_path=cfg.model_name)
+    if cfg.train_from_scratch:
+        bert_config = BertConfig.from_json_file(to_absolute_path(cfg.from_scratch_bert_config))
+        model = BertNERModel(num_classes=cfg.num_classes, config=bert_config)
+    else:
+        model = BertNERModel(num_classes=cfg.num_classes, pretrained_path=cfg.model_name)
+    
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -70,7 +77,10 @@ def main(cfg):
 
     model.to(cfg.device)
 
+    best_f1_macro = 0.0
+
     for epoch in range(cfg.num_epochs):
+        logger.info(f"Epoch {epoch}:")
         model.train()
         with tqdm(total=len(train_dataloader)) as t:
             for step, batch in enumerate(train_dataloader):
@@ -99,8 +109,16 @@ def main(cfg):
             labels_pred.extend(labels_pred_batch)
             labels_gold.extend(labels_gold_batch)
 
-        report = classification_report(labels_gold, labels_pred)
-        print(report)
+        report_str = classification_report(labels_gold, labels_pred)
+        logger.info(f"\n{report_str}")
+
+        report = classification_report(labels_gold, labels_pred, output_dict=True)
+        f1_macro = report["macro avg"]["f1-score"]
+        if f1_macro > best_f1_macro:
+            logger.info(f"Saving best model to: {cfg.save_model_path}")
+            torch.save(model.state_dict(), cfg.save_model_path)
+            with open("report.json", "w") as f:
+                json.dump(report, f)
 
 
 if __name__ == "__main__":
