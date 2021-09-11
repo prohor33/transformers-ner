@@ -29,12 +29,15 @@ def main(cfg):
         reader.read(to_absolute_path(cfg.train_path),
         samples_number=None)
     )
+    label_to_index = train_dataset.label_to_index
     valid_dataset = BERTDataset(
         cfg.model_name,
         reader.read(to_absolute_path(cfg.valid_path),
         samples_number=None),
-        label_to_index=train_dataset.label_to_index
+        label_to_index=label_to_index
     )
+    with open("label_to_index.json", "w") as f:
+        json.dump(train_dataset.label_to_index, f)
 
     data_collator = DataCollatorForTokenClassification(train_dataset.tokenizer, pad_to_multiple_of=None)
 
@@ -47,10 +50,10 @@ def main(cfg):
 
     if cfg.train_from_scratch:
         bert_config = BertConfig.from_json_file(to_absolute_path(cfg.from_scratch_bert_config))
-        model = BertNERModel(num_classes=cfg.num_classes, config=bert_config)
+        model = BertNERModel(num_classes=len(label_to_index), config=bert_config)
     else:
-        model = BertNERModel(num_classes=cfg.num_classes, pretrained_path=cfg.model_name)
-    
+        model = BertNERModel(num_classes=len(label_to_index), pretrained_path=cfg.model_name)
+    model.bert.config.to_json_file("config.json")
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.

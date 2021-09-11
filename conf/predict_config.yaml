@@ -1,0 +1,8 @@
+model_name: "bert-base-cased"
+device: "cuda:2"
+load_path: "/home/gladkikh/code/transformers-ner/outputs/2021-09-12/00-54-12"
+model: "model.cpt"
+config: "config.json"
+label_to_index: "label_to_index.json"
+batch_size: 8
+

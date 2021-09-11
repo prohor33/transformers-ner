@@ -1,5 +1,5 @@
 model_name: "bert-base-cased"
-train_from_scratch: True
+train_from_scratch: False
 from_scratch_bert_config: "data/config.json"
 train_path: "data/conll2003/train.txt"
 valid_path: "data/conll2003/dev.txt"
