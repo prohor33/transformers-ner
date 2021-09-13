@@ -16,7 +16,7 @@ weighted avg  |     0.99    |  0.99  |    0.99    | 51362
 TODO:
 - [x] Save best model
 - [x] Add predict
-- [ ] Add logging to tensorboard
+- [x] Add logging to tensorboard
 - [ ] Try different datasets
 - [ ] Make experiments with different hyperparams
 - [ ] Try to tweak model architecture
