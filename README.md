@@ -20,3 +20,11 @@ TODO:
 - [ ] Try different datasets
 - [ ] Make experiments with different hyperparams
 - [ ] Try to tweak model architecture
+
+## How to use
+
+```
+pip install -r requirements.txt
+python train.py
+python predict.py
+```
