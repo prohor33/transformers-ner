@@ -14,6 +14,8 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 from sklearn.metrics import classification_report
 import json
+from torch.utils.tensorboard import SummaryWriter
+import numpy as np
 
 
 @hydra.main(config_path="conf", config_name="config")
@@ -81,10 +83,12 @@ def main(cfg):
     model.to(cfg.device)
 
     best_f1_macro = 0.0
+    writer = SummaryWriter()
 
     for epoch in range(cfg.num_epochs):
         logger.info(f"Epoch {epoch}:")
         model.train()
+        epoch_losses = []
         with tqdm(total=len(train_dataloader)) as t:
             for step, batch in enumerate(train_dataloader):
                 batch = {k: v.to(cfg.device) for k, v in batch.items()}
@@ -96,6 +100,8 @@ def main(cfg):
                 lr_scheduler.step()
                 optimizer.zero_grad()
                 t.update()
+                epoch_losses.append(loss.detach().cpu().numpy())
+        writer.add_scalar("Loss/train", np.mean(epoch_losses), epoch)
 
         model.eval()
         labels_pred = []
@@ -117,6 +123,17 @@ def main(cfg):
 
         report = classification_report(labels_gold, labels_pred, output_dict=True)
         f1_macro = report["macro avg"]["f1-score"]
+        writer.add_scalar("f1_macro/valid", f1_macro, epoch)
+        entities_keys = set(report.keys())
+        entities_keys.remove("macro avg")
+        entities_keys.remove("weighted avg")
+        entities_keys.remove("accuracy")
+        entities_keys.remove("O")
+        f1_all_entities = []
+        for entity in entities_keys:
+            f1_all_entities.append(report[entity]["f1-score"])
+        f1_mean_entities = np.mean(f1_all_entities)
+        writer.add_scalar("f1_mean_entities/valid", f1_mean_entities, epoch)
         if f1_macro > best_f1_macro:
             logger.info(f"Saving best model to: {cfg.save_model_path}")
             torch.save(model.state_dict(), cfg.save_model_path)
